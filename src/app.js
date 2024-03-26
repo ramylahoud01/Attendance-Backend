@@ -14,11 +14,9 @@ const app = express();
 app.use(bodyParser.json());
 app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', 'https://attendance-frontend-on5kxko1c-ramylahoud01s-projects.vercel.app');
-    res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE");
-    res.setHeader("Access-Control-Allow-Headers", "Content-type , Authorization");
-    res.setHeader("Content-Security-Policy", "frame-ancestors 'none'");
-    res.setHeader("X-Frame-Options", "DENY");
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
+    res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,content-type');
+    res.setHeader('Access-Control-Allow-Credentials', true);
     next();
 });
 
