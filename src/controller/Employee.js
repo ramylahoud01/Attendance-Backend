@@ -81,6 +81,7 @@ export const signInEmployee = async (req, res, next) => {
 }
 export const displayEmployees = async (req, res, next) => {
     try {
+        console.log('hello')
         const { query, page } = req.query;
         const { RowsPerPage } = req.params || 20;
         let searchCondition = {}
@@ -122,3 +123,6 @@ export const displayEmployees = async (req, res, next) => {
     }
 }
 
+export const testroute = (req, res, next) => {
+    res.status(200).json({ message: 'This is a test route.' });
+}
