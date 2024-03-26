@@ -28,7 +28,9 @@ app.use('/PunchOut', PunchOutRoute)
 app.use('/BreakIn', BreakInRoute)
 app.use('/BreakOut', BreakOutRoute)
 app.use('/QrCode/:QrId', QrCodeRoute)
-
+app.get('/test', (req, res) => {
+    res.status(200).json({ message: 'This is a test route.' });
+});
 app.use((error, req, res, next) => {
     const status = error.statusCode || 500;
     const message = error.message;
