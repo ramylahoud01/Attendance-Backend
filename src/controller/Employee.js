@@ -81,13 +81,21 @@ export const signInEmployee = async (req, res, next) => {
 }
 export const displayEmployees = async (req, res, next) => {
     try {
-        console.log('hello')
         const { query, page } = req.query;
-        const { RowsPerPage } = req.params || 20;
-        let searchCondition = {}
-        const FullName = query.split(' ');
-        const FirstName = FullName[0];
-        const LastName = FullName[1] || '';
+        let { RowsPerPage } = req.params;
+
+        RowsPerPage = parseInt(RowsPerPage) || 20;
+
+        let searchCondition = {};
+        let FirstName = '';
+        let LastName = '';
+
+        if (query && typeof query === 'string') {
+            const FullName = query.split(' ');
+            FirstName = FullName[0];
+            LastName = FullName[1] || '';
+        }
+
         if (query) {
             searchCondition.$or = [
                 {
@@ -105,23 +113,25 @@ export const displayEmployees = async (req, res, next) => {
                 {
                     JobTitle: new RegExp(query, "i")
                 }
-            ]
+            ];
         }
-        const employees = await
-            Employee
-                .find(searchCondition)
-                .skip(page * RowsPerPage)
-                .limit(RowsPerPage)
-                .select('FirstName LastName Email JobTitle Role SalaryHourly HoursPerWeek QRCodeID')
-                .populate('QRCodeID')
 
-        const countEmployee = await Employee.countDocuments(searchCondition)
+        const skipCount = page ? parseInt(page) * RowsPerPage : 0;
+
+        const employees = await Employee
+            .find(searchCondition)
+            .skip(skipCount)
+            .limit(RowsPerPage)
+            .select('FirstName LastName Email JobTitle Role SalaryHourly HoursPerWeek QRCodeID')
+            .populate('QRCodeID');
+
+        const countEmployee = await Employee.countDocuments(searchCondition);
 
         res.status(200).json({ employees, TotalEmployee: countEmployee });
     } catch (error) {
         next(error);
     }
-}
+};
 
 export const testroute = (req, res, next) => {
     res.status(200).json({ message: 'This is a test route.' });
