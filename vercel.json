@@ -1,4 +1,4 @@
-{
+  {
     "version": 2,
     "name": "my-backend-project",
     "builds": [
@@ -8,11 +8,10 @@
       }
     ],
     "routes": [
-        { "handle": "vercel", "src": "/(.*)", "dest": "src/app.js" }
-      ],      
-      "env": {
-        "JWT_SECRET": "Secret_Token"
-      }
-      
+      { "src": "/(.*)", "dest": "src/app.js" }
+    ],
+    "env": {
+      "JWT_SECRET": "Secret_Token"
+    }
   }
-    
+  
