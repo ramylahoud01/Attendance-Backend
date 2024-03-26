@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 //dotenv.config({ path: '.env.local' });
 const connectDB = async () => {
     try {
-        await mongoose.connect('mongodb://localhost:27017/Attendance',
+        await mongoose.connect('mongodb+srv://Ramy_lh:JBnjceDRWEgkkT9O@atlascluster.xdeoggk.mongodb.net/Attendance-System',
             //   process.env.DATABASE_URL,
             {
                 useNewUrlParser: true,
