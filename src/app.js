@@ -10,8 +10,9 @@ import BreakOutRoute from "./routes/BreakOut.js";
 import QrCodeRoute from "./routes/QrCode.js"
 import ScheduleRoute from "./routes/Schedule.js"
 import Employee from "./model/Employee.js";
+import cors from "cors"
 const app = express();
-app.use(bodyParser.json());
+app.use(cors())
 app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', 'https://attendance-frontend-on5kxko1c-ramylahoud01s-projects.vercel.app');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
@@ -19,6 +20,7 @@ app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Credentials', true);
     next();
 });
+
 
 app.use('/Employee', EmployeeRoute)
 app.use('/Schedule', ScheduleRoute)
