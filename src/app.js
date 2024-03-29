@@ -18,8 +18,7 @@ app.use(cors({
     methods: 'GET, POST, OPTIONS, PUT, PATCH, DELETE',
     credentials: true,
 }));
-
-
+app.use(bodyParser.json());
 
 app.use('/Employee', EmployeeRoute)
 app.use('/Schedule', ScheduleRoute)
