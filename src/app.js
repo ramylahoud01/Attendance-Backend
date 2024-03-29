@@ -12,14 +12,12 @@ import ScheduleRoute from "./routes/Schedule.js"
 import Employee from "./model/Employee.js";
 import cors from "cors"
 const app = express();
-app.use(cors())
-app.use((req, res, next) => {
-    res.setHeader('Access-Control-Allow-Origin', 'https://attendance-frontend-on5kxko1c-ramylahoud01s-projects.vercel.app');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
-    res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,content-type');
-    res.setHeader('Access-Control-Allow-Credentials', true);
-    next();
-});
+// CORS Configuration
+app.use(cors({
+    origin: 'https://attendance-frontend-on5kxko1c-ramylahoud01s-projects.vercel.app',
+    methods: 'GET, POST, OPTIONS, PUT, PATCH, DELETE',
+    credentials: true,
+}));
 
 
 app.use('/Employee', EmployeeRoute)
