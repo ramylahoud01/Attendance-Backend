@@ -14,10 +14,11 @@ import cors from "cors"
 const app = express();
 // CORS Configuration
 app.use(cors({
-    origin: ['https://attendance-frontend-on5kxko1c-ramylahoud01s-projects.vercel.app', 'https://attendance-frontend-beta.vercel.app'],
+    origin: '*',
     methods: 'GET, POST, OPTIONS, PUT, PATCH, DELETE',
     credentials: true,
 }));
+
 
 
 app.use('/Employee', EmployeeRoute)
