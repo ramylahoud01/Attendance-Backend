@@ -26,7 +26,10 @@ const AttendanceSchema = new Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Schedule',
     },
-    Date: {
+    FromDate: {
+        type: Date,
+    },
+    ToDate: {
         type: Date,
     }
 }, { timestamps: true });

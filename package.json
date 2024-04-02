@@ -23,6 +23,7 @@
     "express-validator": "^7.0.1",
     "inquirer": "^9.2.15",
     "jsonwebtoken": "^9.0.2",
+    "moment-timezone": "^0.5.45",
     "mongoose": "^8.2.0",
     "qr-image": "^3.2.0"
   },

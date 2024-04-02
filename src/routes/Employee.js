@@ -1,10 +1,10 @@
 import express from "express"
 import { displayEmployees, newEmployee, signInEmployee } from "../controller/Employee.js";
-import { EmployeeValidationRules } from "../Validation/Employee.js";
+import { EmployeeValidationRulesForNewEmployee, EmployeeValidationRulesForSignIn } from "../Validation/Employee.js";
 const route = express.Router()
 
-route.post('/new', EmployeeValidationRules, newEmployee);
-route.post('/sign', signInEmployee)
+route.post('/new', EmployeeValidationRulesForNewEmployee, newEmployee);
+route.post('/sign', EmployeeValidationRulesForSignIn, signInEmployee)
 route.get('/display/:RowsPerPage', displayEmployees)
 
 

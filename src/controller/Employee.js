@@ -48,8 +48,14 @@ export const newEmployee = async (req, res, next) => {
 export const signInEmployee = async (req, res, next) => {
     try {
         const { Email, Password } = req.body;
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            const errorMessages = errors.array().map((error) => error.msg);
+            const error = new Error(`${errorMessages}`);
+            error.statusCode = 422;
+            throw error;
+        }
         const foundEmployee = await Employee.findOne({ Email: Email });
-        console.log('hy')
         if (!foundEmployee) {
             const error = new Error("Email not found. Please provide a valid email.");
             error.statusCode = 404;

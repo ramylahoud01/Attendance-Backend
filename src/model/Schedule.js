@@ -11,11 +11,11 @@ const ScheduleSchema = new Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Attendance'
     },
-    FromToHours: {
-        type: String,
+    FromDate: {
+        type: Date,
         required: true
     },
-    Date: {
+    ToDate: {
         type: Date,
         required: true
     }

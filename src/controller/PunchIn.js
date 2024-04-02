@@ -4,6 +4,7 @@ import PunchIn from "../model/PunchIn.js";
 
 export const registerPunchIn = async (req, res, next) => {
     try {
+
         const { Content } = req.body;
         const qrCodeData = decodeQRCode(Content);
         const parsedData = parseQRCodeData(qrCodeData);
@@ -12,48 +13,30 @@ export const registerPunchIn = async (req, res, next) => {
         if (!existingEmployee) {
             return res.status(404).json({ message: "Employee not found" });
         }
-
-        const currentDate = new Date();
-        const startDate = new Date(
-            currentDate.getFullYear(),
-            currentDate.getMonth(),
-            currentDate.getDate(),
-            0,
-            0,
-            0
-        );
-        const endDate = new Date(
-            currentDate.getFullYear(),
-            currentDate.getMonth(),
-            currentDate.getDate(),
-            23,
-            59,
-            59
-        );
-
+        let currentDate = new Date();
+        console.log('currentDate', currentDate)
         let attendance = await Attendance.findOne({
             EmployeeID: existingEmployee._id,
-            Date: { $gte: startDate, $lte: endDate }
-        });
+            ToDate: {
+                $lte: currentDate,
+            },
+        }).sort({ FromDate: -1 });
 
-        if (!attendance) {
-            attendance = new Attendance({
-                EmployeeID: existingEmployee._id,
-                Date: currentDate
-            });
-            attendance = await attendance.save();
-        }
-
+        // if (!attendance) {
+        //     attendance = new Attendance({
+        //         EmployeeID: existingEmployee._id,
+        //         // Date: currentDate
+        //     });
+        //     attendance = await attendance.save();
+        // }
         const punchIn = new PunchIn({ StartingDate: new Date() });
         const savedPunchIn = await punchIn.save();
-
 
         await Attendance.findByIdAndUpdate(
             attendance._id,
             { $set: { PunchInID: savedPunchIn._id } },
             { new: true }
         );
-
         savedPunchIn.AttendanceID = attendance._id;
         await savedPunchIn.save();
 

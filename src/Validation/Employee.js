@@ -44,10 +44,21 @@ const validateRole =
     body('Role').not().isEmpty().withMessage('Role cannot be empty').bail();
 
 
-export const EmployeeValidationRules = [
+export const EmployeeValidationRulesForNewEmployee = [
     validateFirstName,
     validateLastName,
     validateEmail,
     validatePassword,
     validateRole
 ];
+const validateEmailForSignIn =
+    body('Email').not().isEmpty().withMessage('Email cannot be empty').bail();
+
+const validatePasswordForSignIn =
+    body('Password').not().isEmpty().withMessage('Password cannot be empty').bail();
+
+export const EmployeeValidationRulesForSignIn = [
+    validateEmailForSignIn,
+    validatePasswordForSignIn,
+];
+
