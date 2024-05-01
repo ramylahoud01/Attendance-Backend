@@ -174,3 +174,30 @@ export const displayFullNameAndSchedule = async (req, res, next) => {
         next(error);
     }
 };
+
+
+export const displayEmployeeForAutoComplete = async (req, res, next) => {
+    try {
+        const { searchQuery } = req.query
+        let cnd = {}
+        const FullName = searchQuery.split(' ');
+        const FirstName = FullName[0];
+        const LastName = FullName[1] || '';
+        if (searchQuery.length >= 1) {
+            cnd.$or = [
+                {
+                    $and: [
+                        { FirstName: new RegExp(FirstName, "i") },
+                        { LastName: new RegExp(LastName, "i") }
+                    ]
+                }]
+        } else {
+            cnd = { _id: { $eq: null } }
+        }
+
+        const employees = await Employee.find(cnd).select('FirstName LastName')
+        res.status(200).json({ employees })
+    } catch (error) {
+        next(error)
+    }
+}

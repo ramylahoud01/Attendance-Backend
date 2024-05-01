@@ -9,7 +9,6 @@ dotenv.config({ path: '.env.local' });
 const TimeZone = process.env.TZ
 export const registerPunchOut = async (req, res, next) => {
     try {
-
         const { Content } = req.body;
         const qrCodeData = decodeQRCode(Content);
         const parsedData = parseQRCodeData(qrCodeData);
@@ -23,6 +22,19 @@ export const registerPunchOut = async (req, res, next) => {
 
         const result = await PunchIn.aggregate([
             {
+                $lookup: {
+                    from: "schedules",
+                    localField: "ScheduleID",
+                    foreignField: "_id",
+                    as: "schedule"
+                }
+            },
+            {
+                $match: {
+                    "schedule.EmployeeID": existingEmployee._id
+                }
+            },
+            {
                 $addFields: {
                     timeDifference: { $abs: { $subtract: ["$StartingDate", currentDate] } }
                 }
@@ -32,8 +44,14 @@ export const registerPunchOut = async (req, res, next) => {
             },
             {
                 $limit: 1
+            },
+            {
+                $project: {
+                    schedule: 0
+                }
             }
         ]);
+        console.log('result', result)
         const closestPunchIn = result[0];
         let scheduleFound = await Schedule.findById(closestPunchIn.ScheduleID)
         if (!scheduleFound) {

@@ -34,8 +34,6 @@ export const registerPunchIn = async (req, res, next) => {
                 ]
             }
         });
-        console.log('existingEmployee._id', existingEmployee._id)
-        console.log(scheduleFound)
         if (!scheduleFound) {
             return res.status(404).json({ message: "Schedule not found for today" });
         }
@@ -48,10 +46,8 @@ export const registerPunchIn = async (req, res, next) => {
             const punchIn = new PunchIn({ StartingDate: new Date() });
             const savedPunchIn = await punchIn.save();
             if (currentHour > FromDateHour || (currentHour === FromDateHour && currentMinute > FromDateMinute)) {
-                console.log('late')
                 punchStatus = 'late';
             } else {
-                console.log('onTime')
                 punchStatus = 'onTime';
             }
             await Schedule.findByIdAndUpdate(
