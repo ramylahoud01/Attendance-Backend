@@ -4,7 +4,7 @@ import timeZone from "mongoose-timezone"
 import dotenv from 'dotenv';
 dotenv.config({ path: '.env.local' });
 
-const getTimezone = () => process.env.TZ || "UTC";
+const getTimezone = () => process.env.tz || "UTC";
 
 const PunchOutSchema = new Schema({
     ScheduleID: {

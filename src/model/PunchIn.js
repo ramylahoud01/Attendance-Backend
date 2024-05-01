@@ -4,7 +4,7 @@ const Schema = mongoose.Schema
 import dotenv from 'dotenv';
 dotenv.config({ path: '.env.local' });
 
-const getTimezone = () => process.env.TZ || "UTC";
+const getTimezone = () => process.env.tz || "UTC";
 
 
 const PunchInSchema = new Schema({

@@ -6,7 +6,7 @@ import moment from 'moment-timezone'
 import dotenv from 'dotenv';
 dotenv.config({ path: '.env.local' });
 
-const TimeZone = process.env.TZ
+const TimeZone = process.env.tz
 export const registerPunchOut = async (req, res, next) => {
     try {
         const { Content } = req.body;
