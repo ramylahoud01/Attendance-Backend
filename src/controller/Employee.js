@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import dotenv from 'dotenv';
 import { validationResult } from "express-validator";
+import Schedule from "../model/Schedule.js";
 dotenv.config({ path: '.env.local' });
 
 export const newEmployee = async (req, res, next) => {
@@ -130,7 +131,6 @@ export const displayEmployees = async (req, res, next) => {
             .limit(RowsPerPage)
             .select('FirstName LastName Email JobTitle Role SalaryHourly HoursPerWeek QRCodeID')
             .populate('QRCodeID');
-
         const countEmployee = await Employee.countDocuments(searchCondition);
 
         res.status(200).json({ employees, TotalEmployee: countEmployee });
@@ -139,6 +139,38 @@ export const displayEmployees = async (req, res, next) => {
     }
 };
 
-export const testroute = (req, res, next) => {
-    res.status(200).json({ message: 'This is a test route.' });
-}
+export const displayFullNameAndSchedule = async (req, res, next) => {
+    try {
+        const employees = await Employee.find().select('FirstName LastName');
+        const adjustedEmployees = await Promise.all(employees.map(async (employee) => {
+            const schedules = await Schedule.find({ EmployeeID: employee._id }).select('FromDate ToDate');
+            const adjustedSchedules = schedules.map((schedule) => {
+                if (schedule.FromDate && schedule.ToDate) {
+                    const fromHourStr = schedule.FromDate.toISOString().substring(11, 13);
+                    const toHourStr = schedule.ToDate.toISOString().substring(11, 13);
+
+                    const adjustedToHourNumber = Number(toHourStr) === 12 ? '12PM' : (Number(toHourStr) > 12 ? (Number(toHourStr) - 12 + 'PM') : (Number(toHourStr) + 'AM'));
+                    const adjustedFromHourNumber = Number(fromHourStr) === 12 ? '12PM' : (Number(fromHourStr) > 12 ? (Number(fromHourStr) - 12 + 'PM') : (Number(fromHourStr) + 'AM'));
+                    return {
+                        id: schedule.FromDate.toLocaleDateString('en-LB'),
+                        date: `${adjustedFromHourNumber} - ${adjustedToHourNumber}`
+                    };
+                } else {
+                    return {
+                        id: schedule.FromDate.toLocaleDateString('en-LB'),
+                        date: ' OFF '
+                    };
+                }
+            });
+
+            return {
+                FullName: `${employee.FirstName} ${employee.LastName}`,
+                id: employee._id,
+                schedules: adjustedSchedules
+            };
+        }));
+        res.status(200).json(adjustedEmployees);
+    } catch (error) {
+        next(error);
+    }
+};

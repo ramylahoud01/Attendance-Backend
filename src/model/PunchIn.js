@@ -1,15 +1,23 @@
 import mongoose from "mongoose";
+import timeZone from "mongoose-timezone"
 const Schema = mongoose.Schema
+import dotenv from 'dotenv';
+dotenv.config({ path: '.env.local' });
+
+const getTimezone = () => process.env.TZ || "UTC";
+
 
 const PunchInSchema = new Schema({
-    AttendanceID: {
+    ScheduleID: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Attendance',
+        ref: 'Schedule',
     },
     StartingDate: {
         type: Date,
-        required: true
+        required: true,
+        timezone: getTimezone
     }
 }, { timestamps: true });
 
+PunchInSchema.plugin(timeZone);
 export default mongoose.model('PunchIn', PunchInSchema)
