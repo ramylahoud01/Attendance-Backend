@@ -1,5 +1,10 @@
 import mongoose from "mongoose";
+import timeZone from "mongoose-timezone";
 const Schema = mongoose.Schema
+import dotenv from 'dotenv';
+dotenv.config({ path: '.env.local' });
+
+const getTimezone = () => process.env.tz || "UTC";
 
 const BreakOutSchema = new Schema({
     AttendanceID: {
@@ -8,8 +13,10 @@ const BreakOutSchema = new Schema({
     },
     EndDate: {
         type: Date,
-        required: true
+        required: true,
+        timezone: getTimezone
     }
 }, { timestamps: true });
 
+BreakOutSchema.plugin(timeZone);
 export default mongoose.model('BreakOut', BreakOutSchema)

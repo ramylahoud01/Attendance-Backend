@@ -51,36 +51,29 @@ export const registerPunchOut = async (req, res, next) => {
                 }
             }
         ]);
-        console.log('result', result)
         const closestPunchIn = result[0];
         let scheduleFound = await Schedule.findById(closestPunchIn.ScheduleID)
         if (!scheduleFound) {
             return res.status(404).json({ message: "Schedule not found for today" });
         }
         if (!scheduleFound.PunchOutID) {
+            console.log('currentDate', new Date())
             const punchOut = new PunchOut({ EndDate: new Date(), ScheduleID: closestPunchIn.ScheduleID });
             const ToDate = moment(scheduleFound.ToDate); // Convert ToDate to a moment object
             const ToDateDay = ToDate.utc().date();
             const ToDateHour = ToDate.utc().hour();
-            const ToDateMinute = ToDate.utc().minute();
             const currentDay = moment().tz(TimeZone).date();
             const currentHour = moment().tz(TimeZone).hour();
-            const currentMinute = moment().tz(TimeZone).minute();
-            console.log('ToDateDay', ToDateDay, 'ToDateHour', ToDateHour, 'ToDateMinute', ToDateMinute)
-            console.log('currentDay', currentDay, 'currentHour', currentHour, 'currentMinute', currentMinute)
+
             if (ToDateDay === currentDay) {
                 if (currentHour < ToDateHour) {
-                    console.log('scheduleFound.PunchStatus1', scheduleFound.PunchStatus)
                     punchStatus = scheduleFound.PunchStatus === 'onTime' ? 'LeavingEarly' : 'lateAndLeavingEarly'
                 } else {
-                    console.log('scheduleFound.PunchStatus2', scheduleFound.PunchStatus)
                     punchStatus = scheduleFound.PunchStatus === 'onTime' ? 'onTime' : 'late'
                 }
             } else if (ToDateDay > currentDay) {
-                console.log('scheduleFound.PunchStatus3', scheduleFound.PunchStatus)
                 punchStatus = scheduleFound.PunchStatus === 'onTime' ? 'LeavingEarly' : 'lateAndLeavingEarly'
             } else {
-                console.log('scheduleFound.PunchStatus4', scheduleFound.PunchStatus)
                 punchStatus = scheduleFound.PunchStatus === 'onTime' ? 'onTime' : 'late'
             }
             const savedPunchOut = await punchOut.save();

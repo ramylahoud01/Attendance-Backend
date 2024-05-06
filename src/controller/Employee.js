@@ -10,6 +10,7 @@ dotenv.config({ path: '.env.local' });
 
 export const newEmployee = async (req, res, next) => {
     try {
+
         const { FirstName, LastName, Email, JobTitle, Role, SalaryHourly, HoursPerWeek, Password } = req.body;
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
