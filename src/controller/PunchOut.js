@@ -16,7 +16,9 @@ export const registerPunchOut = async (req, res, next) => {
         const existingEmployee = await Employee.findById(EmployeeID);
         let punchStatus;
         if (!existingEmployee) {
-            return res.status(404).json({ message: "Employee not found" });
+            const error = new Error("Employee not found with this QR code.");
+            error.statusCode = 404;
+            throw error;
         }
         let currentDate = new Date();
 
@@ -54,7 +56,9 @@ export const registerPunchOut = async (req, res, next) => {
         const closestPunchIn = result[0];
         let scheduleFound = await Schedule.findById(closestPunchIn.ScheduleID)
         if (!scheduleFound) {
-            return res.status(404).json({ message: "Schedule not found for today" });
+            const error = new Error("Error: Schedule not found for today. Please contact your manager.");
+            error.statusCode = 404;
+            throw error;
         }
         if (!scheduleFound.PunchOutID) {
             console.log('currentDate', new Date())
@@ -83,7 +87,9 @@ export const registerPunchOut = async (req, res, next) => {
                 { new: true }
             );
         } else {
-            return res.status(201).json({ message: "Already Punched out." });
+            const error = new Error("Error: Punch-Out Already Completed");
+            error.statusCode = 404;
+            throw error;
         }
         res.status(201).json({ message: "Punch out with success." });
     } catch (error) {

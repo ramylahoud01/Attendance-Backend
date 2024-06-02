@@ -62,8 +62,6 @@ export const generateScheduleFromTable = async (req, res, next) => {
         const { EmployeeID } = req.params;
         const { date, period } = req.body;
         const selectedDate = parseDate(date);
-        console.log('date', date)
-        console.log('period', period)
         const { startDate, endDate } = parsePeriod(selectedDate, period);
         let schedule = await Schedule.findOne({
             EmployeeID: EmployeeID,
@@ -287,7 +285,9 @@ export const generateScheduleForReports = async (req, res, next) => {
             .populate([
                 { path: 'EmployeeID', select: ['FirstName', 'LastName', 'Role'] },
                 { path: 'PunchInID' },
-                { path: 'PunchOutID' }
+                { path: 'PunchOutID' },
+                { path: "BreakInID" },
+                { path: "BreakOutID" }
             ]);
 
         scheduleFound.sort((a, b) => {
@@ -309,13 +309,32 @@ export const generateScheduleForReports = async (req, res, next) => {
             const AdjustedFrom = `${AdjustedFromHour}${AdjustedFromPeriod}`;
             const AdjustedTo = `${AdjustedToHour}${AdjustedToPeriod}`;
             const AdjustedDate = `${schedule.FromDate.getFullYear()}-${addLeadingZero(schedule.FromDate.getMonth() + 1)}-${addLeadingZero(schedule.FromDate.getDate())}`;
+            const punchInTime = schedule.PunchInID.StartingDate.getTime();
+            const punchOutTime = schedule.PunchOutID.EndDate.getTime();
+            const totalDurationMs = punchOutTime - punchInTime;
+
+            let breakDurationMs = 0;
+            if (schedule.BreakInID && schedule.BreakOutID) {
+                const breakInTime = schedule.BreakInID.StartDate.getTime();
+                const breakOutTime = schedule.BreakOutID.EndDate.getTime();
+                breakDurationMs = breakOutTime - breakInTime;
+            }
+
+            const totalDurationWithoutBreakMs = totalDurationMs - breakDurationMs;
+
+            const hours = Math.floor(totalDurationWithoutBreakMs / (1000 * 60 * 60));
+            let minutes = Math.floor((totalDurationWithoutBreakMs % (1000 * 60 * 60)) / (1000 * 60));
+            minutes = minutes < 10 ? `0${minutes}` : minutes;
             return {
                 EmployeeName: `${schedule?.EmployeeID?.FirstName || ''} ${schedule?.EmployeeID?.LastName || ''}`,
                 Shiftwork: ` ${AdjustedFrom} - ${AdjustedTo} `,
                 FullDate: AdjustedDate,
                 PunchIn: `${schedule.PunchInID.StartingDate.getHours()}:${schedule.PunchInID.StartingDate.getMinutes().toString().padStart(2, '0')}:${schedule.PunchInID.StartingDate.getSeconds().toString().padStart(2, '0')}`,
                 PunchOut: `${schedule.PunchOutID.EndDate.getHours()}:${schedule.PunchOutID.EndDate.getMinutes().toString().padStart(2, '0')}:${schedule.PunchOutID.EndDate.getSeconds().toString().padStart(2, '0')}`,
-                PunchStatus: schedule.PunchStatus,
+                BreakIn: schedule.BreakInID ? `${schedule.BreakInID.StartDate.getHours()}:${schedule.BreakInID.StartDate.getMinutes().toString().padStart(2, '0')}:${schedule.BreakInID.StartDate.getSeconds().toString().padStart(2, '0')}` : 'N/A',
+                BreakOut: schedule.BreakOutID ? `${schedule.BreakOutID.EndDate.getHours()}:${schedule.BreakOutID.EndDate.getMinutes().toString().padStart(2, '0')}:${schedule.BreakOutID.EndDate.getSeconds().toString().padStart(2, '0')}` : 'N/A',
+                PunchStatus: schedule.PunchStatus === 'LeavingEarly' ? 'Leaving Early' : schedule.PunchStatus === 'onTime' ? 'on Time' : schedule.PunchStatus === 'lateAndLeavingEarly' ? 'Late & Leaving Early' : schedule.PunchStatus === 'late' ? 'Late' : schedule.PunchStatus,
+                WorkTime: `${hours}:${minutes}`
             };
         });
         res.status(200).json(adjustedSchedules);
@@ -324,3 +343,66 @@ export const generateScheduleForReports = async (req, res, next) => {
     }
 }
 
+export const displaySummaryReport = async (req, res, next) => {
+    try {
+        const { EmployeeID, SelectedDate, punchStatus } = req.query;
+        let query = {};
+        const queryConditions = [];
+        if (EmployeeID && EmployeeID !== 'undefined') {
+            queryConditions.push({ EmployeeID });
+        }
+        if (SelectedDate) {
+            const year = new Date(SelectedDate).getUTCFullYear();
+            const month = new Date(SelectedDate).getUTCMonth() + 1;
+            const day = new Date(SelectedDate).getUTCDate();
+            queryConditions.push({
+                $expr: {
+                    $and: [
+                        { $eq: [{ $year: "$FromDate" }, year] },
+                        { $eq: [{ $month: "$FromDate" }, month] },
+                        { $eq: [{ $dayOfMonth: "$FromDate" }, day] }
+                    ]
+                }
+            });
+        }
+        if (punchStatus && punchStatus != 'All') {
+            queryConditions.push({ PunchStatus: punchStatus });
+        }
+        if (queryConditions.length > 0) {
+            query = { $and: queryConditions };
+        }
+        let scheduleFound = await Schedule.find(query)
+            .populate([
+                { path: 'EmployeeID', select: ['FirstName', 'LastName', 'Role'] },
+                { path: 'PunchInID' },
+                { path: 'PunchOutID' },
+                { path: "BreakInID" },
+                { path: "BreakOutID" }
+            ]);
+        function addLeadingZero(value) {
+            return value < 10 ? `0${value}` : value;
+        }
+        const adjustedSchedules = scheduleFound.map((schedule) => {
+            const AdjustedFromHour = (schedule?.FromDate?.getUTCHours() % 12) || 12;
+            const AdjustedFromPeriod = schedule?.FromDate?.getUTCHours() >= 12 ? "PM" : "AM";
+            const AdjustedToHour = (schedule?.ToDate?.getUTCHours() % 12) || 12;
+            const AdjustedToPeriod = schedule?.ToDate?.getUTCHours() >= 12 ? "PM" : "AM";
+            const AdjustedFrom = `${AdjustedFromHour}${AdjustedFromPeriod}`;
+            const AdjustedTo = `${AdjustedToHour}${AdjustedToPeriod}`;
+            const AdjustedDate = `${schedule.FromDate.getFullYear()}-${addLeadingZero(schedule.FromDate.getMonth() + 1)}-${addLeadingZero(schedule.FromDate.getDate())}`;
+            return {
+                EmployeeName: `${schedule?.EmployeeID?.FirstName || ''} ${schedule?.EmployeeID?.LastName || ''}`,
+                Shiftwork: schedule.ToDate !== null ? `${AdjustedFrom} - ${AdjustedTo} ` : 'OFF',
+                FullDate: AdjustedDate,
+                PunchIn: schedule.PunchInID ? `${schedule.PunchInID.StartingDate.getHours()}:${schedule.PunchInID.StartingDate.getMinutes().toString().padStart(2, '0')}:${schedule.PunchInID.StartingDate.getSeconds().toString().padStart(2, '0')}` : 'N/A',
+                PunchOut: schedule.PunchOutID ? `${schedule.PunchOutID.EndDate.getHours()}:${schedule.PunchOutID.EndDate.getMinutes().toString().padStart(2, '0')}:${schedule.PunchOutID.EndDate.getSeconds().toString().padStart(2, '0')}` : 'N/A',
+                BreakIn: schedule.BreakInID ? `${schedule.BreakInID.StartDate.getHours()}:${schedule.BreakInID.StartDate.getMinutes().toString().padStart(2, '0')}:${schedule.BreakInID.StartDate.getSeconds().toString().padStart(2, '0')}` : 'N/A',
+                BreakOut: schedule.BreakOutID ? `${schedule.BreakOutID.EndDate.getHours()}:${schedule.BreakOutID.EndDate.getMinutes().toString().padStart(2, '0')}:${schedule.BreakOutID.EndDate.getSeconds().toString().padStart(2, '0')}` : 'N/A',
+                PunchStatus: schedule.PunchStatus === 'LeavingEarly' ? 'Leaving Early' : schedule.PunchStatus === 'onTime' ? 'on Time' : schedule.PunchStatus === 'lateAndLeavingEarly' ? 'Late & Leaving Early' : schedule.PunchStatus === 'late' ? 'Late' : schedule.PunchStatus,
+            };
+        });
+        res.status(200).json(adjustedSchedules);
+    } catch (error) {
+        next(error);
+    }
+}

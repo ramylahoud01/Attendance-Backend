@@ -15,7 +15,9 @@ export const registerBreakOut = async (req, res, next) => {
 
         const existingEmployee = await Employee.findById(employeeID);
         if (!existingEmployee) {
-            return res.status(404).json({ message: "Employee not found" });
+            const error = new Error("Employee not found with this QR code.");
+            error.statusCode = 404;
+            throw error;
         }
         const currentDate = new Date();
         const result = await PunchIn.aggregate([
@@ -52,10 +54,19 @@ export const registerBreakOut = async (req, res, next) => {
         const closestPunchIn = result[0];
         let scheduleFound = await Schedule.findById(closestPunchIn.ScheduleID)
         if (!scheduleFound) {
-            return res.status(404).json({ message: "Schedule not found for today" });
+            const error = new Error("Error: Schedule not found for today. Please contact your manager.");
+            error.statusCode = 404;
+            throw error;
         }
         if (!scheduleFound.PunchInID) {
-            return res.status(404).json({ message: "You Should Punch In First ." });
+            const error = new Error("Error: You Should Punch In First. ");
+            error.statusCode = 404;
+            throw error;
+        }
+        if (!scheduleFound.BreakInID) {
+            const error = new Error("Error: You Should Break In First. ");
+            error.statusCode = 404;
+            throw error;
         }
         if (!scheduleFound.BreakOutID) {
             const breakOut = new BreakOut({ EndDate: new Date() });
@@ -70,7 +81,9 @@ export const registerBreakOut = async (req, res, next) => {
             savedBreakOut.ScheduleID = scheduleFound._id;
             await savedBreakOut.save();
         } else {
-            return res.status(201).json({ message: "Already Break out." });
+            const error = new Error("Error: Break-Out Already Completed");
+            error.statusCode = 404;
+            throw error;
         }
         res.status(201).json({ message: "Break out successful." });
     } catch (error) {
