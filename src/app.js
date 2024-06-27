@@ -27,7 +27,8 @@ app.use('/PunchIn', PunchInRoute)
 app.use('/PunchOut', PunchOutRoute)
 app.use('/BreakIn', BreakInRoute)
 app.use('/BreakOut', BreakOutRoute)
-app.use('/QrCode/:QrId', QrCodeRoute)
+app.use('/QrCode', QrCodeRoute)
+
 app.get('/', (req, res) => {
     res.send('Hello, welcome to the homepage!');
 });
