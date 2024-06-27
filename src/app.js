@@ -28,6 +28,9 @@ app.use('/PunchOut', PunchOutRoute)
 app.use('/BreakIn', BreakInRoute)
 app.use('/BreakOut', BreakOutRoute)
 app.use('/QrCode/:QrId', QrCodeRoute)
+app.get('/', (req, res) => {
+    res.send('Hello, welcome to the homepage!');
+});
 app.use((error, req, res, next) => {
     const status = error.statusCode || 500;
     const message = error.message;
