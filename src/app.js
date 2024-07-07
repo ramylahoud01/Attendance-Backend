@@ -9,7 +9,7 @@ import BreakInRoute from "./routes/BreakIn.js";
 import BreakOutRoute from "./routes/BreakOut.js";
 import QrCodeRoute from "./routes/QrCode.js"
 import ScheduleRoute from "./routes/Schedule.js"
-import Employee from "./model/Employee.js";
+
 import cors from "cors"
 const app = express();
 // CORS Configuration
@@ -28,6 +28,7 @@ app.use('/PunchOut', PunchOutRoute)
 app.use('/BreakIn', BreakInRoute)
 app.use('/BreakOut', BreakOutRoute)
 app.use('/QrCode', QrCodeRoute)
+
 
 app.get('/', (req, res) => {
     res.send('Hello, welcome to the homepage!');

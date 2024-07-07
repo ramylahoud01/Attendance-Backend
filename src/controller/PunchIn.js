@@ -2,73 +2,170 @@ import Employee from "../model/Employee.js";
 import PunchIn from "../model/PunchIn.js";
 import Schedule from "../model/Schedule.js";
 import dotenv from 'dotenv';
-dotenv.config({ path: '.env.local' });
+import faceapi from 'face-api.js';
+import canvas from 'canvas';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import Face from "../model/Face.js";
 import moment from 'moment-timezone'
 
+const { Canvas, Image, ImageData } = canvas;
+faceapi.env.monkeyPatch({ Canvas, Image, ImageData });
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const loadModels = async () => {
+    await faceapi.nets.ssdMobilenetv1.loadFromDisk(path.join(__dirname, '../model'));
+    await faceapi.nets.faceLandmark68Net.loadFromDisk(path.join(__dirname, '../model'));
+    await faceapi.nets.faceRecognitionNet.loadFromDisk(path.join(__dirname, '../model'));
+};
+
+// Load models initially
+loadModels();
+
+dotenv.config({ path: '.env.local' });
 const TimeZone = process.env.tz
 export const registerPunchIn = async (req, res, next) => {
     try {
-        const { Content } = req.body;
-        let punchStatus;
-        if (!Content) {
-            return res.status(400).json({ message: "Content is required" });
-        }
+        const { Content, image } = req.body;
+        if (Content) {
+            // QR Code logic
+            let punchStatus;
+            const qrCodeData = decodeQRCode(Content);
+            const employeeID = parseQRCodeData(qrCodeData);
 
-        const qrCodeData = decodeQRCode(Content);
-        const parsedData = parseQRCodeData(qrCodeData);
-        const employeeID = parsedData;
-
-        const existingEmployee = await Employee.findById(employeeID);
-        if (!existingEmployee) {
-            const error = new Error("Employee not found with this QR code.");
-            error.statusCode = 404;
-            throw error;
-        }
-
-        const currentDate = new Date();
-        let scheduleFound = await Schedule.findOne({
-            EmployeeID: existingEmployee._id,
-            $expr: {
-                $and: [
-                    { $eq: [{ $year: "$FromDate" }, { $year: currentDate }] },
-                    { $eq: [{ $month: "$FromDate" }, { $month: currentDate }] },
-                    { $eq: [{ $dayOfMonth: "$FromDate" }, { $dayOfMonth: currentDate }] }
-                ]
+            if (!employeeID) {
+                return res.status(400).json({ message: "Content is invalid or missing" });
             }
-        });
-        if (!scheduleFound) {
-            const error = new Error("Error: Schedule not found for today. Please contact your manager.");
-            error.statusCode = 404;
-            throw error;
-        }
-        const foundDate = moment(scheduleFound.FromDate);
-        const FromDateHour = foundDate.utc().hour();
-        const FromDateMinute = foundDate.utc().minute();
-        const currentHour = moment().tz(TimeZone).hour();
-        const currentMinute = moment().tz(TimeZone).minute();
-        if (!scheduleFound.PunchInID) {
-            const punchIn = new PunchIn({ StartingDate: new Date() });
-            const savedPunchIn = await punchIn.save();
-            if (currentHour > FromDateHour || (currentHour === FromDateHour && currentMinute > FromDateMinute)) {
-                punchStatus = 'late';
+
+            const existingEmployee = await Employee.findById(employeeID);
+            if (!existingEmployee) {
+                return res.status(404).json({ message: "Employee not found with this QR code." });
+            }
+
+            const currentDate = new Date();
+            let scheduleFound = await Schedule.findOne({
+                EmployeeID: existingEmployee._id,
+                $expr: {
+                    $and: [
+                        { $eq: [{ $year: "$FromDate" }, { $year: currentDate }] },
+                        { $eq: [{ $month: "$FromDate" }, { $month: currentDate }] },
+                        { $eq: [{ $dayOfMonth: "$FromDate" }, { $dayOfMonth: currentDate }] }
+                    ]
+                }
+            });
+            if (!scheduleFound) {
+                return res.status(404).json({ message: "Schedule not found for today. Please contact your manager." });
+            }
+
+            const fromDate = moment(scheduleFound.FromDate).utc();
+            const currentDateTime = moment().tz(TimeZone).utc();
+            const isLate = currentDateTime.isAfter(fromDate);
+
+            if (!scheduleFound.PunchInID) {
+                const punchIn = new PunchIn({ StartingDate: new Date() });
+                const savedPunchIn = await punchIn.save();
+
+                punchStatus = isLate ? 'late' : 'onTime';
+
+                await Schedule.findByIdAndUpdate(
+                    scheduleFound._id,
+                    { $set: { PunchInID: savedPunchIn._id, PunchStatus: punchStatus } },
+                    { new: true }
+                );
+
+                savedPunchIn.ScheduleID = scheduleFound._id;
+                await savedPunchIn.save();
             } else {
-                punchStatus = 'onTime';
+                return res.status(400).json({ message: "Punch-In already completed" });
             }
-            await Schedule.findByIdAndUpdate(
-                scheduleFound._id,
-                { $set: { PunchInID: savedPunchIn._id, PunchStatus: punchStatus } },
-                { new: true }
-            );
 
-            savedPunchIn.ScheduleID = scheduleFound._id;
-            await savedPunchIn.save();
+            return res.status(201).json({ message: "Punch in successful." });
+        } else if (image) {
+            // Face recognition logic
+            console.log('Incoming image data:', image.substring(0, 30));
+            if (!image.startsWith('data:image/jpeg;base64,')) {
+                return res.status(400).json({ error: 'Invalid image format. Only JPEG images are supported.' });
+            }
+            const base64Data = image.replace(/^data:image\/jpeg;base64,/, '');
+            const buffer = Buffer.from(base64Data, 'base64');
+            const imageCanvas = await canvas.loadImage(buffer);
+            const detection = await faceapi.detectSingleFace(imageCanvas).withFaceLandmarks().withFaceDescriptor();
+
+            if (!detection) {
+                console.log('No face detected');
+                return res.status(404).json({ error: 'No face detected' });
+            }
+
+            const detectedDescriptor = detection.descriptor;
+
+            const storedFaces = await Face.find().populate('EmployeeID');
+
+            const labeledDescriptors = storedFaces.map(face => {
+                const descriptorArray = face.descriptor.map(item => parseFloat(item));
+                const floatDescriptor = new Float32Array(descriptorArray);
+                return new faceapi.LabeledFaceDescriptors(face.EmployeeID.Email, [floatDescriptor]);
+            });
+
+            const faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.6);
+            console.log('FaceMatcher:', faceMatcher);
+
+            const bestMatch = faceMatcher.findBestMatch(detectedDescriptor);
+            console.log('Best match:', bestMatch);
+
+            if (bestMatch.label === 'unknown') {
+                return res.status(404).json({ error: 'No matching employee found' });
+            }
+
+            const foundEmployee = await Employee.findOne({ Email: bestMatch.label });
+            console.log('Found employee:', foundEmployee);
+
+            // Continue with your PunchIn logic for face recognition
+            let punchStatus;
+
+            const currentDate = new Date();
+            let scheduleFound = await Schedule.findOne({
+                EmployeeID: foundEmployee._id,
+                $expr: {
+                    $and: [
+                        { $eq: [{ $year: "$FromDate" }, { $year: currentDate }] },
+                        { $eq: [{ $month: "$FromDate" }, { $month: currentDate }] },
+                        { $eq: [{ $dayOfMonth: "$FromDate" }, { $dayOfMonth: currentDate }] }
+                    ]
+                }
+            });
+            console.log('scheduleFound', scheduleFound)
+            if (!scheduleFound) {
+                return res.status(404).json({ message: "Schedule not found for today. Please contact your manager." });
+            }
+
+            const fromDate = moment(scheduleFound.FromDate).utc();
+            const currentDateTime = moment().tz(TimeZone).utc();
+            const isLate = currentDateTime.isAfter(fromDate);
+
+            if (!scheduleFound.PunchInID) {
+                const punchIn = new PunchIn({ StartingDate: new Date() });
+                const savedPunchIn = await punchIn.save();
+
+                punchStatus = isLate ? 'late' : 'onTime';
+
+                await Schedule.findByIdAndUpdate(
+                    scheduleFound._id,
+                    { $set: { PunchInID: savedPunchIn._id, PunchStatus: punchStatus } },
+                    { new: true }
+                );
+
+                savedPunchIn.ScheduleID = scheduleFound._id;
+                await savedPunchIn.save();
+            } else {
+                return res.status(400).json({ message: "Punch-In already completed" });
+            }
+
+            return res.status(201).json({ message: "Punch in successful." });
         } else {
-            const error = new Error("Error: Punch-In Already Completed");
-            error.statusCode = 404;
-            throw error;
+            return res.status(400).json({ message: "Content or image is required" });
         }
-
-        res.status(201).json({ message: "Punch in successful." });
     } catch (error) {
         next(error);
     }

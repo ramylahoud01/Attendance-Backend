@@ -39,6 +39,10 @@ const EmployeeSchema = new Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'QrCode'
     },
+    FaceID: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Face'
+    }
 }, { timestamps: true });
 
 export default mongoose.model('Employee', EmployeeSchema);
