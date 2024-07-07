@@ -44,6 +44,7 @@ export const registerPunchIn = async (req, res, next) => {
                 return res.status(404).json({ message: "Employee not found with this QR code." });
             }
 
+            console.log()
             const currentDate = new Date();
             let scheduleFound = await Schedule.findOne({
                 EmployeeID: existingEmployee._id,
