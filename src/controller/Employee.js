@@ -68,9 +68,10 @@ export const newEmployee = async (req, res, next) => {
         savedEmployee.QRCodeID = savedQRCode._id;
 
         // Process image and save face descriptor if available
-        if (req.file && req.file.path) {
-            const image = await canvas.loadImage(req.file.path);
-            const detections = await faceapi.detectSingleFace(image).withFaceLandmarks().withFaceDescriptor();
+        if (req.file && req.file.buffer) {
+            const imgBuffer = req.file.buffer;
+            const img = await canvas.loadImage(imgBuffer);
+            const detections = await faceapi.detectSingleFace(img).withFaceLandmarks().withFaceDescriptor();
 
             if (detections) {
                 const descriptorArray = Array.from(detections.descriptor);
