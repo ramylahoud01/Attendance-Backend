@@ -2,18 +2,18 @@
   "version": 2,
   "name": "my-backend-project",
   "functions": {
-    "Backend/src/*.js": {
+    "src/*.js": {
       "maxDuration": 5 
     }
   },
   "builds": [
     {
-      "src": "Backend/src/app.js",
+      "src": "src/app.js",
       "use": "@vercel/node"
     }
   ],
   "routes": [
-    { "src": "/(.*)", "dest": "Backend/src/app.js" }
+    { "src": "/(.*)", "dest": "src/app.js" }
   ],
   "env": {
     "JWT_SECRET": "Secret_Token"
