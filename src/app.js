@@ -38,7 +38,7 @@ app.use((error, req, res, next) => {
     const message = error.message;
     res.status(status).json({ message: message });
 });
-console.log('beforrrr conectingggg ')
+console.log('beforrrr conectingggg neww')
 connectDB().then(() => {
     app.listen(5000, () => {
         console.log("Server started on port 5000");
