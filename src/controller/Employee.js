@@ -12,6 +12,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import Face from "../model/Face.js";
 import fs from "fs";
+import { Readable } from 'stream';
 import csv from 'csv-parser';
 dotenv.config({ path: '.env.local' });
 
@@ -314,7 +315,10 @@ export const importEmployees = async (req, res, next) => {
     }
 
     try {
-        fs.createReadStream(req.file.path)
+        const csvData = req.file.buffer.toString('utf8');
+        const readableStream = Readable.from([csvData]);
+
+        readableStream
             .pipe(csv())
             .on('data', async (data) => {
                 const { FirstName, LastName, Email, JobTitle, Role, SalaryHourly, HoursPerWeek, Password } = data;
