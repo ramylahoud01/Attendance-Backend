@@ -31,7 +31,7 @@ app.use('/QrCode', QrCodeRoute)
 
 
 app.get('/', (req, res) => {
-    res.send('Hello, welcome to the homepage!');
+    res.send('Hello, welcome to the homepage visitors !');
 });
 app.use((error, req, res, next) => {
     const status = error.statusCode || 500;
