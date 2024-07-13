@@ -1,11 +1,6 @@
 {
   "version": 2,
   "name": "my-backend-project",
-  "functions": {
-    "src/*.js": {
-      "maxDuration": 5 
-    }
-  },
   "builds": [
     {
       "src": "src/app.js",
