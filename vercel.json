@@ -10,12 +10,12 @@
   "routes": [
     { "src": "/(.*)", "dest": "src/app.js" }
   ],
+  "functions": {
+    "/Employee/new": {
+      "maxDuration": 30 
+    }
+  },
   "env": {
     "JWT_SECRET": "Secret_Token"
-  },
-  "functions": {
-    "src/api/*.js": {
-      "maxDuration": 30
-    }
   }
 }
