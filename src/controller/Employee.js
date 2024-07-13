@@ -84,8 +84,6 @@ export const newEmployee = async (req, res, next) => {
             } else {
                 return res.status(400).json({ error: 'No face detected in the image' });
             }
-        } else {
-            return res.status(400).json({ error: 'No image uploaded' });
         }
 
         await savedEmployee.save();
