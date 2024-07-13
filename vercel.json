@@ -1,22 +1,21 @@
-  {
-    "version": 2,
-    "name": "my-backend-project",
-    "builds": [
-      {
-        "src": "src/app.js",
-        "use": "@vercel/node"
-      }
-    ],
-    "routes": [
-      { "src": "/(.*)", "dest": "src/app.js" }
-    ],
-    "env": {
-      "JWT_SECRET": "Secret_Token"
-    },
-    "functions": {
-      "src/*.js": {
-        "maxDuration": 30
-      }
+{
+  "version": 2,
+  "name": "my-backend-project",
+  "builds": [
+    {
+      "src": "src/app.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    { "src": "/(.*)", "dest": "src/app.js" }
+  ],
+  "env": {
+    "JWT_SECRET": "Secret_Token"
+  },
+  "functions": {
+    "src/api/*.js": {
+      "maxDuration": 30
     }
   }
-  
+}
