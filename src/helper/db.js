@@ -1,9 +1,15 @@
 import mongoose from "mongoose";
-//import dotenv from 'dotenv';
-//dotenv.config({ path: '.env.local' });
+import dotenv from 'dotenv';
+dotenv.config({ path: '.env.local' });
 const connectDB = async () => {
     try {
-        const conncected = await mongoose.connect('mongodb+srv://Ramy_lh:JBnjceDRWEgkkT9O@atlascluster.xdeoggk.mongodb.net/Attendance-System')
+        console.log(process.env.MONGODB_URI)
+        const conncected = await mongoose.connect(process.env.MONGODB_URI,
+            {
+                useNewUrlParser: true,
+                useUnifiedTopology: true,
+            }
+        )
         if (conncected) {
             console.log("Connected to MongoDB...");
             return true;
