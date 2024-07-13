@@ -10,9 +10,9 @@
   "routes": [
     { "src": "/(.*)", "dest": "src/app.js" }
   ],
-  "functions": {
-    "/Employee/new": {
-      "maxDuration": 30 
+ "functions": {
+    "/**/*.js": {
+      "maxDuration": 15
     }
   },
   "env": {
