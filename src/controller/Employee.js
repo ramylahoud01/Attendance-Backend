@@ -71,21 +71,16 @@ export const newEmployee = async (req, res, next) => {
         if (req.file && req.file.buffer) {
             const imgBuffer = req.file.buffer;
             const img = await canvas.loadImage(imgBuffer);
-            const detections = await faceapi.detectSingleFace(img).withFaceLandmarks().withFaceDescriptor();
 
-            if (detections) {
-                const descriptorArray = Array.from(detections.descriptor);
-
-                const newFace = new Face({
-                    descriptor: descriptorArray,
-                    EmployeeID: savedEmployee._id,
+            // Start face detection asynchronously
+            processImageAndSaveFaceDescriptor(img, savedEmployee._id)
+                .then(() => {
+                    // Handle success
+                })
+                .catch((error) => {
+                    // Handle error
+                    console.error('Error processing image:', error);
                 });
-
-                await newFace.save();
-                savedEmployee.FaceID = newFace._id;
-            } else {
-                return res.status(400).json({ error: 'No face detected in the image' });
-            }
         }
 
         await savedEmployee.save();
@@ -94,6 +89,27 @@ export const newEmployee = async (req, res, next) => {
         next(error);
     }
 };
+
+// Function to process image and save face descriptor asynchronously
+async function processImageAndSaveFaceDescriptor(img, employeeId) {
+    const detections = await faceapi.detectSingleFace(img).withFaceLandmarks().withFaceDescriptor();
+
+    if (detections) {
+        const descriptorArray = Array.from(detections.descriptor);
+
+        const newFace = new Face({
+            descriptor: descriptorArray,
+            EmployeeID: employeeId,
+        });
+
+        await newFace.save();
+        // Optionally update the employee with FaceID
+        // savedEmployee.FaceID = newFace._id;
+    } else {
+        throw new Error('No face detected in the image');
+    }
+}
+
 
 
 
