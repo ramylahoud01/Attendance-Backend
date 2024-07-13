@@ -12,6 +12,11 @@
     ],
     "env": {
       "JWT_SECRET": "Secret_Token"
+    },
+    "functions": {
+      "src/*.js": {
+        "maxDuration": 30
+      }
     }
   }
   
