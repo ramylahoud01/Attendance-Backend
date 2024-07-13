@@ -3,7 +3,7 @@
   "name": "my-backend-project",
   "functions": {
     "src/*.js": {
-      "maxDuration": 5
+      "maxDuration": 5 
     }
   },
   "builds": [
