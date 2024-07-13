@@ -38,8 +38,11 @@ app.use((error, req, res, next) => {
     const message = error.message;
     res.status(status).json({ message: message });
 });
+console.log('beforrrr conectingggg ')
 connectDB().then(() => {
     app.listen(5000, () => {
         console.log("Server started on port 5000");
     });
+}).catch(error => {
+    console.error('Failed to connect to MongoDB:', error.message);
 });
